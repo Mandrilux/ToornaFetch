@@ -31,7 +31,10 @@ print(ids)
 print(f"{len(ids)} tournois à scrapper")
 
 async def envoyer_message(message):
-    channel = client_discord.get_channel(chanelId)
+
+    # Attendez que le bot soit prêt
+    await client_discord.wait_until_ready()
+    channel = client_discord.get_channel(int(chanelId))
     if channel:
         await channel.send(message)
 def vérifier_et_envoyer(event, currentValue, nameEvent):
@@ -46,7 +49,9 @@ def vérifier_et_envoyer(event, currentValue, nameEvent):
     else:
         # Si la clé n'existe pas, l'ajouter avec la valeur
         client.set(event, currentValue)
+        message = f"Il y a {currentValue} inscrit pour le tournois {nameEvent.capitalize()}"
         print(f"La clé '{event}' n'existe pas. Elle a été ajoutée avec la valeur: {currentValue}")
+        return message
     return None
 
 
@@ -89,6 +94,7 @@ async def scraper_et_envoyer_messages():
         print("En attente du prochain scrapping")
         await asyncio.sleep(300)
 @client_discord.event
+
 async def on_ready():
     print(f'Bot connecté en tant que {client_discord.user}')
 

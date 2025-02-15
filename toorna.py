@@ -41,7 +41,7 @@ def vérifier_et_envoyer(event, currentValue, nameEvent):
     if client.exists(event):
         if client.get(event).decode('utf-8') != currentValue:
             client.set(event, currentValue)
-            message = f"Il y a désormais {currentValue}  inscrit pour le tournois {nameEvent.capitalize()}"
+            message = f"Il y a désormais {currentValue} inscrits pour le tournoi {nameEvent.capitalize()}"
             print(f"La clé '{event}' existe dans Redis et la nouvelle valeur est: {currentValue}")
             return message
         else:
@@ -49,7 +49,7 @@ def vérifier_et_envoyer(event, currentValue, nameEvent):
     else:
         # Si la clé n'existe pas, l'ajouter avec la valeur
         client.set(event, currentValue)
-        message = f"Il y a {currentValue} inscrit pour le tournois {nameEvent.capitalize()}"
+        message = f"Il y a {currentValue} inscrits pour le tournoi {nameEvent.capitalize()}"
         print(f"La clé '{event}' n'existe pas. Elle a été ajoutée avec la valeur: {currentValue}")
         return message
     return None

@@ -6,11 +6,20 @@ from dotenv import load_dotenv
 import time
 import redis
 import discord
+import asyncio
 
 load_dotenv()
 
 client = redis.StrictRedis(host='redis', port=6379, db=0)
-client_discord = discord.Client()
+intents = discord.Intents.default()  # Active les intentions par défaut
+
+# Si vous avez besoin de certaines intentions supplémentaires, vous pouvez les activer
+# Par exemple, pour recevoir des informations sur les membres du serveur :
+intents.members = True
+
+# Créer un client Discord en passant l'objet intents
+client_discord = discord.Client(intents=intents)
+
 
 ids = os.getenv("TOORNAMENTIDS")
 chanelId =  os.getenv("CHANNELID")
@@ -21,12 +30,10 @@ print("Démarrage du bot")
 print(ids)
 print(f"{len(ids)} tournois à scrapper")
 
-
 async def envoyer_message(message):
     channel = client_discord.get_channel(chanelId)
     if channel:
         await channel.send(message)
-
 def vérifier_et_envoyer(event, currentValue, nameEvent):
     if client.exists(event):
         if client.get(event).decode('utf-8') != currentValue:
@@ -43,40 +50,50 @@ def vérifier_et_envoyer(event, currentValue, nameEvent):
     return None
 
 
-while(1):
-    for event in ids:
-        url = "https://play.toornament.com/fr/tournaments/" + event + "/"
-        response = requests.get(url)
-        # Vérifier si la requête a réussi
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.text, "html.parser")
+async def scraper_et_envoyer_messages():
+    while True:
+        for event in ids:
+            url = "https://play.toornament.com/fr/tournaments/" + event + "/"
+            response = requests.get(url)
+            # Vérifier si la requête a réussi
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, "html.parser")
 
-            # Trouver tous les éléments ayant la classe "size"
-            size_elements = soup.find(class_="size")
-            children = size_elements.find_all("div")
+                # Trouver tous les éléments ayant la classe "size"
+                size_elements = soup.find(class_="size")
+                children = size_elements.find_all("div")
 
-            first_child = children[0] if len(children) > 1 else None
-            second_child = children[1] if len(children) > 1 else None
-
-
-            discipline = soup.find(class_="discipline")
-            text = discipline.find('a', class_='highlighted').get_text().lower()
+                first_child = children[0] if len(children) > 1 else None
+                second_child = children[1] if len(children) > 1 else None
 
 
-            # Chercher les enfants avec la classe "current" dans chaque "size"
-            if first_child:
-                currentValue = first_child.text
-            if first_child:
-                currentMax = second_child.text
-
-            print("{}: {} / {}".format(text, currentValue, currentMax))
+                discipline = soup.find(class_="discipline")
+                text = discipline.find('a', class_='highlighted').get_text().lower()
 
 
-            message = vérifier_et_envoyer(event, currentValue, text)
-            if message:
-                client_discord.loop.create_task(envoyer_message(message))
+                # Chercher les enfants avec la classe "current" dans chaque "size"
+                if first_child:
+                    currentValue = first_child.text
+                if first_child:
+                    currentMax = second_child.text
 
-        else:
-            print("Erreur lors de la récupération de la page:", response.status_code)
-    print("En attente du prochain scrapping")
-    time.sleep(300)
+                print("{}: {} / {}".format(text, currentValue, currentMax))
+
+
+                message = vérifier_et_envoyer(event, currentValue, text)
+                if message:
+                    await envoyer_message(message)
+
+            else:
+                print("Erreur lors de la récupération de la page:", response.status_code)
+        print("En attente du prochain scrapping")
+        await asyncio.sleep(300)
+@client_discord.event
+async def on_ready():
+    print(f'Bot connecté en tant que {client_discord.user}')
+
+    # Lancer la tâche de scraping après que le bot soit prêt
+    await scraper_et_envoyer_messages()
+
+# Lancer le bot Discord
+client_discord.run(token)

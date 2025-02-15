@@ -52,9 +52,9 @@ while(1):
                 #print(f"comparaison entre '{client.get(event).decode('utf-8')}' et {currentValue}")
                 if client.get(event).decode('utf-8')  != currentValue:
                     client.set(event, currentValue)
-                    print(f"La clé '{event}' existe dans redis. Nouvelle valeur: {currentValue}")
+                    print(f"La clé '{event}' existe dans redis et la ouvelle valeur est: {currentValue}")
                 else:
-                    print(f"La clé '{event}' existe dans redis. elle n'as pas été modifié: {currentValue}")
+                    print(f"La clé '{event}' existe et la valeur n'as pas été modifié: {currentValue}")
             else:
                 # Si la clé n'existe pas, l'ajouter avec la valeur
                 client.set(event, currentValue)

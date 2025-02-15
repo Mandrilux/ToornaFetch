@@ -4,8 +4,11 @@ import os
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 import time
+import redis
 
 load_dotenv()
+
+client = redis.StrictRedis(host='redis', port=6379, db=0)
 
 ids = os.getenv("TOORNAMENTIDS")
 ids = ids.split(',')
@@ -42,6 +45,22 @@ while(1):
                 currentMax = second_child.text
 
             print("{}: {} / {}".format(text, currentValue, currentMax))
+
+
+
+            if client.exists(event):
+                #print(f"comparaison entre '{client.get(event).decode('utf-8')}' et {currentValue}")
+                if client.get(event).decode('utf-8')  != currentValue:
+                    client.set(event, currentValue)
+                    print(f"La clé '{event}' existe dans redis. Nouvelle valeur: {currentValue}")
+                else:
+                    print(f"La clé '{event}' existe dans redis. elle n'as pas été modifié: {currentValue}")
+            else:
+                # Si la clé n'existe pas, l'ajouter avec la valeur
+                client.set(event, currentValue)
+                print(f"La clé '{event}' n'existe pas. Elle a été ajoutée avec la valeur: {currentValue}")
+
+
         else:
             print("Erreur lors de la récupération de la page:", response.status_code)
     print("En attente du prochain scrapping")

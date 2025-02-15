@@ -1,0 +1,22 @@
+services:
+  python-bot:
+    build: .
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    stdin_open: true
+    tty: true
+    networks:
+      - lan_bot
+  redis:
+    image: redis:latest
+    container_name: redis
+    volumes:
+      - redis-data:/data
+    networks:
+      - lan_bot
+volumes:
+  redis-data:
+networks:
+  lan_bot:

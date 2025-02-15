@@ -5,18 +5,43 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 import time
 import redis
+import discord
 
 load_dotenv()
 
 client = redis.StrictRedis(host='redis', port=6379, db=0)
+client_discord = discord.Client()
 
 ids = os.getenv("TOORNAMENTIDS")
+chanelId =  os.getenv("CHANNELID")
+token = os.getenv("TOKENDISCORD")
+
 ids = ids.split(',')
 print("Démarrage du bot")
 print(ids)
 print(f"{len(ids)} tournois à scrapper")
 
-# URL de la page web
+
+async def envoyer_message(message):
+    channel = client_discord.get_channel(chanelId)
+    if channel:
+        await channel.send(message)
+
+def vérifier_et_envoyer(event, currentValue, nameEvent):
+    if client.exists(event):
+        if client.get(event).decode('utf-8') != currentValue:
+            client.set(event, currentValue)
+            message = f"Il y a désormais {currentValue}  inscrit pour le tournois {nameEvent.capitalize()}"
+            print(f"La clé '{event}' existe dans Redis et la nouvelle valeur est: {currentValue}")
+            return message
+        else:
+            print(f"La clé '{event}' existe et la valeur n'a pas été modifiée: {currentValue}")
+    else:
+        # Si la clé n'existe pas, l'ajouter avec la valeur
+        client.set(event, currentValue)
+        print(f"La clé '{event}' n'existe pas. Elle a été ajoutée avec la valeur: {currentValue}")
+    return None
+
 
 while(1):
     for event in ids:
@@ -47,19 +72,9 @@ while(1):
             print("{}: {} / {}".format(text, currentValue, currentMax))
 
 
-
-            if client.exists(event):
-                #print(f"comparaison entre '{client.get(event).decode('utf-8')}' et {currentValue}")
-                if client.get(event).decode('utf-8')  != currentValue:
-                    client.set(event, currentValue)
-                    print(f"La clé '{event}' existe dans redis et la ouvelle valeur est: {currentValue}")
-                else:
-                    print(f"La clé '{event}' existe et la valeur n'as pas été modifié: {currentValue}")
-            else:
-                # Si la clé n'existe pas, l'ajouter avec la valeur
-                client.set(event, currentValue)
-                print(f"La clé '{event}' n'existe pas. Elle a été ajoutée avec la valeur: {currentValue}")
-
+            message = vérifier_et_envoyer(event, currentValue, text)
+            if message:
+                client_discord.loop.create_task(envoyer_message(message))
 
         else:
             print("Erreur lors de la récupération de la page:", response.status_code)

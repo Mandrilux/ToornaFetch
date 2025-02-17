@@ -7,6 +7,8 @@ import time
 import redis
 import discord
 import asyncio
+from datetime import datetime
+
 
 load_dotenv()
 
@@ -31,7 +33,6 @@ print(ids)
 print(f"{len(ids)} tournois à scrapper")
 
 async def envoyer_message(message):
-
     # Attendez que le bot soit prêt
     await client_discord.wait_until_ready()
     channel = client_discord.get_channel(int(chanelId))
@@ -57,6 +58,8 @@ def vérifier_et_envoyer(event, currentValue, nameEvent):
 
 async def scraper_et_envoyer_messages():
     while True:
+        now = datetime.now()
+        print("Date et heure actuelles :", now.strftime("%Y-%m-%d %H:%M:%S"))
         for event in ids:
             url = "https://play.toornament.com/fr/tournaments/" + event + "/"
             response = requests.get(url)

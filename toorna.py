@@ -8,6 +8,7 @@ import redis
 import discord
 import asyncio
 from datetime import datetime
+import pytz
 
 
 load_dotenv()
@@ -26,6 +27,7 @@ client_discord = discord.Client(intents=intents)
 ids = os.getenv("TOORNAMENTIDS")
 chanelId =  os.getenv("CHANNELID")
 token = os.getenv("TOKENDISCORD")
+france_tz = pytz.timezone("Europe/Paris")
 
 ids = ids.split(',')
 print("Démarrage du bot")
@@ -58,8 +60,11 @@ def vérifier_et_envoyer(event, currentValue, nameEvent):
 
 async def scraper_et_envoyer_messages():
     while True:
-        now = datetime.now()
-        print("Date et heure actuelles :", now.strftime("%Y-%m-%d %H:%M:%S"))
+        # Obtenir la date et l'heure actuelles en France
+        now_in_france = datetime.now(france_tz)
+        # Afficher la date et l'heure françaises
+        print("date et heure :", now_in_france.strftime("%Y-%m-%d %H:%M:%S"))
+        print("--------------------------------------------")
         for event in ids:
             url = "https://play.toornament.com/fr/tournaments/" + event + "/"
             response = requests.get(url)
@@ -94,6 +99,7 @@ async def scraper_et_envoyer_messages():
 
             else:
                 print("Erreur lors de la récupération de la page:", response.status_code)
+        print("--------------------------------------------")
         print("En attente du prochain scrapping")
         await asyncio.sleep(300)
 @client_discord.event
